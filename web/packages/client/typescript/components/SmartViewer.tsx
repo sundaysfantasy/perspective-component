@@ -50,7 +50,7 @@ export class SmartViewerMeta implements ComponentMeta {
 
     getPropsReducer(tree: PropertyTree): SmartViewerProps {
         return {
-            url
+
             url: tree.readString("url", "/models/example.png")
         };
     }
