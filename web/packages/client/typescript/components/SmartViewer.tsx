@@ -7,15 +7,15 @@ import {
   SizeObject,
 } from "@inductiveautomation/perspective-client";
 
-// din xeokit‑sdk
+// importăm NavCubePlugin din xeokit-sdk v2.6.0
 import {
   Viewer,
   XKTLoaderPlugin,
   AmbientLight,
   DirLight,
+  NavCubePlugin,
 } from "@xeokit/xeokit-sdk/dist/xeokit-sdk.es.js";
 
-// ID‑ul unic al componentei în Perspective
 export const COMPONENT_TYPE = "rad.display.smartViewer";
 
 interface SmartViewerProps {
@@ -34,16 +34,27 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
     xktLoader: any;
   }>();
 
-  // ─── INITIALIZARE ───
   React.useEffect(() => {
     if (!containerRef.current) return;
 
-    // 1. Creăm canvas și îl inserăm în container
+    // Canvas
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "width:100%;height:100%";
     containerRef.current.appendChild(canvas);
 
-    // 2. Instanțiem Viewer‑ul (webgl)
+    //canvas pentru navcube
+    const navCubeCanvas = document.createElement("canvas");
+    navCubeCanvas.style.cssText = `
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 120px;
+      height: 120px;
+      z-index: 1000;
+    `;
+    containerRef.current.appendChild(navCubeCanvas);
+
+    // Viewer WebGL
     const viewer = new Viewer({
       canvasElement: canvas,
       transparent: false,
@@ -53,12 +64,11 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
         parseInt(backgroundColor.slice(5, 7), 16) / 255,
       ],
     });
-
-    // 3. Gamma‑corectează scena
+    // Gamma corecție
     viewer.scene.gammaOutput = true;
     viewer.scene.gammaFactor = 2.2;
 
-    // 4. Adăugăm lumini
+    // Lumini
     new AmbientLight(viewer.scene, { color: [1, 1, 1], intensity: 0.6 });
     new DirLight(viewer.scene, {
       dir: [-0.5, -0.8, -0.3],
@@ -66,30 +76,37 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       intensity: 1,
     });
 
-    // 5. Plugin XKT pentru încărcare .xkt
+
+    // Plugin XKT Loader
     const xktLoader = new XKTLoaderPlugin(viewer);
+
+    // ── instanţiere NavCubePlugin ──
+    new NavCubePlugin(viewer, {
+      canvasElement: navCubeCanvas,
+      color: "lightblue",
+      visible: true,
+      cameraFly: true,
+      cameraFitFOV: 45,
+      cameraFlyDuration: 0.5,
+    } as any);
 
     viewerRef.current = { viewer, xktLoader };
 
     return () => viewer.destroy();
-  }, []); // doar la montare/demontare
+  }, []); // numai la montare/demontare
 
-  // ─── ÎNCĂRCARE MODEL ───
   React.useEffect(() => {
     const ctx = viewerRef.current;
     if (!ctx || !source) return;
 
-    // Ștergem ce era (de ex. dacă s‑a schimbat source‑ul)
-    ctx.viewer.scene.clear();
+    //ctx.viewer.scene.clear();
 
-    // Încarcă modelul din /models/ în Ignition Webserver
     const model = ctx.xktLoader.load({
       id: "model",
-      src: source || "/models/model.xkt",
+      src: source,
       edges: true,
     });
 
-    // Dacă s‑a încărcat sincron (cache), zboară camera spre AABB‑ul modelului
     if (model) {
       ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
     }
@@ -104,7 +121,6 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
   );
 };
 
-// ─── META ───
 export class SmartViewerMeta implements ComponentMeta {
   getComponentType() {
     return COMPONENT_TYPE;
