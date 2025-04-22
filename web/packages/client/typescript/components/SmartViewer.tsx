@@ -7,13 +7,14 @@ import {
   SizeObject,
 } from "@inductiveautomation/perspective-client";
 
-// importăm NavCubePlugin din xeokit-sdk v2.6.0
+// importăm plugin-urile din xeokit-sdk v2.6.0
 import {
   Viewer,
   XKTLoaderPlugin,
   AmbientLight,
   DirLight,
   NavCubePlugin,
+  TreeViewPlugin,
 } from "@xeokit/xeokit-sdk/dist/xeokit-sdk.es.js";
 
 export const COMPONENT_TYPE = "rad.display.smartViewer";
@@ -37,12 +38,12 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
   React.useEffect(() => {
     if (!containerRef.current) return;
 
-    // Canvas
+    // 1) Canvas principal
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "width:100%;height:100%";
     containerRef.current.appendChild(canvas);
 
-    //canvas pentru navcube
+    // 2) Canvas pentru NavCube
     const navCubeCanvas = document.createElement("canvas");
     navCubeCanvas.style.cssText = `
       position: absolute;
@@ -54,7 +55,24 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
     `;
     containerRef.current.appendChild(navCubeCanvas);
 
-    // Viewer WebGL
+    // 3) Container pentru TreeView
+    const treeContainer = document.createElement("div");
+    treeContainer.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 200px;
+      height: 300px;
+      overflow: auto;
+      background: rgba(255,255,255,0.8);
+      z-index: 1000;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    `;
+    containerRef.current.appendChild(treeContainer);
+
+    // 4) Inițializăm Viewer-ul WebGL
     const viewer = new Viewer({
       canvasElement: canvas,
       transparent: false,
@@ -64,11 +82,10 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
         parseInt(backgroundColor.slice(5, 7), 16) / 255,
       ],
     });
-    // Gamma corecție
     viewer.scene.gammaOutput = true;
     viewer.scene.gammaFactor = 2.2;
 
-    // Lumini
+    // 5) Lumini
     new AmbientLight(viewer.scene, { color: [1, 1, 1], intensity: 0.6 });
     new DirLight(viewer.scene, {
       dir: [-0.5, -0.8, -0.3],
@@ -76,11 +93,10 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       intensity: 1,
     });
 
-
-    // Plugin XKT Loader
+    // 6) Loader pentru .xkt
     const xktLoader = new XKTLoaderPlugin(viewer);
 
-    // ── instanţiere NavCubePlugin ──
+    // 7) NavCubePlugin
     new NavCubePlugin(viewer, {
       canvasElement: navCubeCanvas,
       color: "lightblue",
@@ -90,16 +106,27 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       cameraFlyDuration: 0.5,
     } as any);
 
+    // 8) TreeViewPlugin pentru listă ierarhică
+    const treeView = new TreeViewPlugin(viewer, {
+          containerElement: treeContainer,
+          hierarchy: "containment",      // poți și "types", "storeys" etc.
+          autoExpandDepth: 1,            // câte niveluri să extindă inițial
+        });
+
+    // 9) Ascultăm click‑urile pe titlul nodurilor:
+    treeView.on("nodeTitleClicked", (e) => {
+      // e.treeViewNode.objectId este ID‑ul entităţii
+      console.log("ID-ul nodului apăsat:", e.treeViewNode.objectId);
+    });
+
     viewerRef.current = { viewer, xktLoader };
 
     return () => viewer.destroy();
-  }, []); // numai la montare/demontare
+  }, []); // doar la mount/unmount
 
   React.useEffect(() => {
     const ctx = viewerRef.current;
     if (!ctx || !source) return;
-
-    //ctx.viewer.scene.clear();
 
     const model = ctx.xktLoader.load({
       id: "model",
