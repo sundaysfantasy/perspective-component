@@ -1,6 +1,10 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
+        "typeRoots": [
+            "./src",
+            "./node_modules/@types"
+        ],
         "allowJs": false,
         "allowSyntheticDefaultImports": true,
         "baseUrl": ".",
@@ -30,6 +34,8 @@
         "lib": ["es6", "dom", "es7", "es2017"]
     },
     "include": [
+        "src/**/*",
+        "src/xeokit.d.ts",
         "./typescript/**/*.ts",
         "./typescript/**/*.tsx"
     ],
