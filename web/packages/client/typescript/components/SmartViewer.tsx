@@ -17,7 +17,7 @@ import {
 export const COMPONENT_TYPE = "rad.display.smartViewer";
 
 interface EntityColor {
-  entityId: string;
+  id: string;
   color: string;
 }
 
@@ -118,12 +118,12 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
     });
 
     // Aplicăm noile culori
-    entityColors.forEach(({entityId, color}) => {
-      if (!entityId || !color) return;
+    entityColors.forEach(({id, color}) => {
+      if (!id || !color) return;
 
-      const obj = ctx.viewer.scene.objects[entityId];
+      const obj = ctx.viewer.scene.objects[id];
       if (!obj) {
-        console.warn(`Entity not found: ${entityId}`);
+        console.warn(`Entity not found: ${id}`);
         return;
       }
 
@@ -154,13 +154,15 @@ export class SmartViewerMeta implements ComponentMeta {
     return { width: 400, height: 300 };
   }
   getPropsReducer(tree: PropertyTree): SmartViewerProps {
+    const entityColors = tree.read("entityColors", []).map((item: any) => ({
+      id: item.id || "", // Folosește item.id în loc de item.readString
+      color: item.color || "#ff0000"
+    }));
+
     return {
       source: tree.readString("source", ""),
       backgroundColor: tree.readString("backgroundColor", "#f0f0f0"),
-      entityColors: tree.readArray("entityColors").map((item: PropertyTree) => ({
-        entityId: item.readString("entityId", ""),
-        color: item.readString("color", "#ff0000")
-      }))
+      entityColors
     };
   }
 }
