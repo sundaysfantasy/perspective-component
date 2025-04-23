@@ -13,24 +13,26 @@
             "type": "string",
             "format": "color",
             "title": "Background color",
-            "default": "#F0F0F0"
+            "default": "#f0f0f0"
         },
-        "entityID": {
-            "type": "string",
-            "title": "Entity ID",
-            "description": "ID-ul entității din model pe care vrem să o colorăm",
-            "default": ""
-        },
-        "color": {
-            "type": "string",
-            "format": "color",
-            "title": "Entity color",
-            "description": "Culoarea entității specificate (hex)",
-            "default": "#ff0000"
-        },
-        "style": {
-            "$ref": "urn:ignition-schema:schemas/style-properties.schema.json",
-            "default": { "classes": "" }
+        "entityColors": {
+            "type": "array",
+            "title": "Entity Colors",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "entityId": {
+                        "type": "string",
+                        "title": "Entity ID"
+                    },
+                    "color": {
+                        "type": "string",
+                        "format": "color",
+                        "title": "Color"
+                    }
+                }
+            },
+            "default": []
         }
     }
 }
