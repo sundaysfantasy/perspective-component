@@ -138,40 +138,28 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       edges: true,
     });
 
-    if (model) {
-      ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
-    }
+    ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
   }, [source]);
 
   // ─── COLOREAZĂ ENTITĂȚILE ───
   React.useEffect(() => {
     const ctx = viewerRef.current;
-    if (!ctx || !entityColors || entityColors.length === 0) return;
+    if (!ctx || !entityColors?.length) return;
 
-    // Resetăm toate culorile (modificare aici)
-    Object.values(ctx.viewer.scene.objects).forEach((obj: any) => {
-      obj.mesh?.eachMaterial((mat: any) => {
-        mat.color = null;
-      });
-    });
-
-    // Aplicăm noile culori
-    entityColors.forEach(({id, color}) => {
+    entityColors.forEach(({ id, color }) => {
       if (!id || !color) return;
 
-      // Căutare entitate în multiple locații
-      const entity = ctx.viewer.scene.objects[id] ||
-                   ctx.viewer.metaScene.metaObjects[id]?.entity;
-
+      // Găsește entitatea direct în scene.objects
+      const entity = ctx.viewer.scene.objects[id];
       if (!entity) {
         console.warn(`Entity not found: ${id}`);
         return;
       }
 
+      // Transformă #RRGGBB în [r, g, b]
       const [r, g, b] = hexToRgb(color);
-      entity.mesh?.eachMaterial((mat: any) => {
-        mat.color = [r, g, b];
-      });
+      // Aplică colorize
+      entity.colorize = [r, g, b];
     });
   }, [entityColors]);
   return (
