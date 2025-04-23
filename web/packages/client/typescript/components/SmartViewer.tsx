@@ -127,6 +127,23 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
     return () => viewer.destroy();
   }, []); // doar la mount/unmount
 
+const applyColors = () => {
+  const ctx = viewerRef.current;
+  if (!ctx || !entityColors?.length) return;
+
+  entityColors.forEach(({ id, color }) => {
+    if (!id || !color) return;
+    const entity = ctx.viewer.scene.objects[id];
+    if (!entity) {
+      console.warn(`Entity not found: ${id}`);
+      return;
+    }
+    const [r, g, b] = hexToRgb(color);
+    entity.colorize = [r, g, b];
+  });
+};
+
+
   // ─── ÎNCĂRCARE MODEL ───
   React.useEffect(() => {
     const ctx = viewerRef.current;
@@ -138,30 +155,21 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       edges: true,
     });
 
-    ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
+    // când modelul e gata, reaplic culoarea
+    model.on("loaded", () => {
+      // centram camera
+      ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
+      // reaplicăm culorile
+      applyColors();
+    });
   }, [source]);
 
   // ─── COLOREAZĂ ENTITĂȚILE ───
   React.useEffect(() => {
-    const ctx = viewerRef.current;
-    if (!ctx || !entityColors?.length) return;
-
-    entityColors.forEach(({ id, color }) => {
-      if (!id || !color) return;
-
-      // Găsește entitatea direct în scene.objects
-      const entity = ctx.viewer.scene.objects[id];
-      if (!entity) {
-        console.warn(`Entity not found: ${id}`);
-        return;
-      }
-
-      // Transformă #RRGGBB în [r, g, b]
-      const [r, g, b] = hexToRgb(color);
-      // Aplică colorize
-      entity.colorize = [r, g, b];
-    });
+    applyColors();
   }, [entityColors]);
+
+
   return (
     <div
       {...emit()}
