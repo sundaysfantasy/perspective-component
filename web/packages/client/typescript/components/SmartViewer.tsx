@@ -125,6 +125,9 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
     treeView.on("nodeTitleClicked", (e) => {
       // e.treeViewNode.objectId este ID‑ul entităţii
       console.log("ID-ul nodului apăsat:", e.treeViewNode.objectId);
+
+      const id = e.treeViewNode.objectId;     // ID-ul entităţii
+      addAnnotationForEntity(id, id);
     });
 
     //10) annotations
@@ -154,6 +157,41 @@ const applyColors = () => {
     entity.colorize = [r, g, b];
   });
 };
+
+const addAnnotationForEntity = (entityId: string, label?: string) => {
+  const ctx = viewerRef.current;
+  if (!ctx) return;
+
+  const { viewer, annotations: plugin } = ctx;
+
+  const entity = viewer.scene.objects[entityId];
+  if (!entity) {
+    console.warn("Entity not found in scene:", entityId);
+    return;
+  }
+
+  // ---- verificare sigură ----------------------------------
+  const already = plugin.annotations && plugin.annotations[entityId];
+  if (already) {
+    already.setMarkerShown(true);
+    already.setLabelShown(true);
+    return;
+  }
+  // ---------------------------------------------------------
+
+  plugin.createAnnotation({
+    id: entityId,          // <-- trebuie să fie UNIC
+    entity,                // anchorează de obiect
+    markerShown: true,
+    labelShown : true,
+    values     : {
+      glyph: "●",
+      title: label ?? entityId
+    }
+  });
+};
+
+
 
 
   // ─── ÎNCĂRCARE MODEL ───
