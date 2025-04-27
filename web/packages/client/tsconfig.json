@@ -23,7 +23,7 @@
         "noImplicitThis": true,
         "noImplicitReturns": false,
         "noImplicitAny": true,
-        "suppressImplicitAnyIndexErrors": true,
+        //"suppressImplicitAnyIndexErrors": true,
         "noUnusedLocals": true,
         "outDir": "dist/",
         "pretty": true,

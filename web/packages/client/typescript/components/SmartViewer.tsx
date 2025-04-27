@@ -15,6 +15,7 @@ import {
   DirLight,
   NavCubePlugin,
   TreeViewPlugin,
+  AnnotationsPlugin,
 } from "@xeokit/xeokit-sdk/dist/xeokit-sdk.es.js";
 
 export const COMPONENT_TYPE = "rad.display.smartViewer";
@@ -43,7 +44,11 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
 }) => {
   const { source, backgroundColor, entityColors } = props;
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const viewerRef = React.useRef<{ viewer: any; xktLoader: any }>();
+  const viewerRef = React.useRef<{ 
+    viewer: any; 
+    xktLoader: any;
+    annotations: any
+    }>();
 
   // ─── INITIALIZARE ───
   React.useEffect(() => {
@@ -122,7 +127,14 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({
       console.log("ID-ul nodului apăsat:", e.treeViewNode.objectId);
     });
 
-    viewerRef.current = { viewer, xktLoader };
+    //10) annotations
+    const annotations = new AnnotationsPlugin(viewer, {
+      markerHTML: `<div class="sv-annotation-marker">{{glyph}}</div>`,
+      labelHTML : `<div class="sv-annotation-label">{{title}}</div>`,
+      values    : { glyph: "●", title: "Etichetă" }   // valori default
+    }); 
+
+    viewerRef.current = { viewer, xktLoader, annotations };
 
     return () => viewer.destroy();
   }, []); // doar la mount/unmount
@@ -161,6 +173,16 @@ const applyColors = () => {
       ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
       // reaplicăm culorile
       applyColors();
+      const [xmin, ymin, zmin, xmax, ymax, zmax] = model.aabb;
+      ctx.annotations.createAnnotation({
+        id         : "centerAnno",
+        worldPos   : [(xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2],
+        markerShown: true,
+        labelShown : true,
+        values     : { title: "Centru model", glyph: "ⓘ" }
+      });
+
+
     });
   }, [source]);
 

@@ -1,0 +1,44 @@
+/* web/packages/client/scss/annotations.scss */
+
+.sv-annotation-marker {
+    color: #fff;
+    line-height: 1.8;
+    text-align: center;
+    font-family: monospace;
+    font-weight: bold;
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 15px;
+    border: 2px solid #fff;
+    background: black;
+    visibility: hidden;
+    box-shadow: 5px 5px 15px 1px #000;
+    z-index: 0;
+  }
+  
+  .sv-annotation-label {
+    position: absolute;
+    max-width: 250px;
+    min-height: 50px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #000;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    box-shadow: 5px 5px 15px 1px #000;
+    z-index: 90000;
+  }
+  
+  .sv-annotation-label::after,
+  .sv-annotation-label::before {
+    content: '';
+    position: absolute;
+    border-style: solid;
+    border-width: 8px 12px 8px 0;
+    top: 20px;
+    left: -12px;
+  }
+  .sv-annotation-label::after  { border-color: transparent white;  }
+  .sv-annotation-label::before { border-color: transparent #fff; border-width: 9px 13px 9px 0;}
+  
