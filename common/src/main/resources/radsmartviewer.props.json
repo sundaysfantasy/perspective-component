@@ -1,61 +1,36 @@
 {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["source"],
-    "properties": {
-      "source": {
-        "type": "string",
-        "title": "Model source",
-        "description": "Calea relativă sau URL către fișierul .xkt",
-        "default": ""
-      },
-      "backgroundColor": {
-        "type": "string",
-        "format": "color",
-        "title": "Background color",
-        "default": "#f0f0f0"
-      },
-      "entityColors": {
-        "type": "array",
-        "title": "Entity Colors",
-        "items": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "title": "Entity ID"
-            },
-            "color": {
-              "type": "string",
-              "format": "color",
-              "title": "Color"
-            }
-          },
-          "required": ["id"]
-        },
-        "default": []
-      },
-  
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source"],
+  "properties": {
+    "source": { "type": "string", "title": "Model source", "default": "" },
+    "backgroundColor": {
+      "type": "string",
+      "format": "color",
+      "title": "Background color",
+      "default": "#f0f0f0"
+    },
 
-      "annotations": {
-        "type": "array",
-        "title": "Annotations",
-        "items": {
-          "type": "object",
-          "properties": {
-            "entityId": {
-              "type": "string",
-              "title": "Entity ID"
-            },
-            "title": {
-              "type": "string",
-              "title": "Label text"
+    "entityColors": {
+      "type": "array",
+      "title": "Entity Colors",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id":    { "type": "string",  "title": "Entity ID" },
+          "color": { "type": "string",  "format": "color", "title": "Color" },
+          "annotation": {
+            "type": "object",
+            "title": "Annotation",
+            "default": {},
+            "properties": {
+              "title": { "type": "string", "title": "Label text", "default": "" }
             }
-          },
-          "required": ["entityId", "title"]
+          }
         },
-        "default": []
-      }
+        "required": ["id"]
+      },
+      "default": []
     }
   }
-  
+}

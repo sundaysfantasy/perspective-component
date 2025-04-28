@@ -2,9 +2,10 @@ import "@inductiveautomation/perspective-client";
 
 declare module "@inductiveautomation/perspective-client" {
   interface EmitProps {
-    annotations?: {
-      entityId: string;
-      title: string;
+    entityColors?: {
+      id: string;
+      color?: string;
+      annotation?: { title?: string };
     }[];
   }
 }
