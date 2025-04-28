@@ -6,7 +6,7 @@ import {
 
 import {
   Viewer, XKTLoaderPlugin, AmbientLight, DirLight,
-  NavCubePlugin, TreeViewPlugin, AnnotationsPlugin
+  NavCubePlugin, TreeViewPlugin, AnnotationsPlugin, math,
 } from "@xeokit/xeokit-sdk/dist/xeokit-sdk.es.js";
 
 export const COMPONENT_TYPE = "rad.display.smartViewer";
@@ -28,13 +28,18 @@ const hexToRgb = (h: string): [number, number, number] => [
   parseInt(h.slice(3, 5), 16) / 255,
   parseInt(h.slice(5, 7), 16) / 255,
 ];
-
 const getEntityCenter = (ent: any): [number, number, number] => {
+  const p = math.getAABB3Center(ent.aabb);      // number[]
+  return [p[0], p[1], p[2]];                    // cast sigur la tuplu
+};
+
+
+/*const getEntityCenter = (ent: any): [number, number, number] => {
   const bb = ent.aabb;                // [xmin,ymin,zmin,xmax,ymax,zmax]
   return [(bb[0] + bb[3]) / 2,
           (bb[1] + bb[4]) / 2,
           (bb[2] + bb[5]) / 2];
-};
+};*/
 
 /* ── COMPONENTA ─────────────────────────────────── */
 const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }) => {
@@ -45,6 +50,7 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
     viewer: any;
     xktLoader: any;
     annotations: any;
+    camCtrl: any;           // ← nou
   }>();
 
   /* ── INITIALIZARE ───────────────────────────── */
@@ -62,6 +68,8 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
       "position:absolute;bottom:10px;left:10px;width:120px;height:120px;z-index:1000";
     containerRef.current.appendChild(navCanvas);
 
+    canvas.addEventListener("wheel", e => e.preventDefault(), { passive:false });
+
     /* tree container */
     const treeDiv = document.createElement("div");
     treeDiv.style.cssText =
@@ -74,6 +82,12 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
     const viewer = new Viewer({ canvasElement: canvas, backgroundColor: [r, g, b] });
     viewer.scene.gammaOutput = true;
     viewer.scene.gammaFactor = 2.2;
+    const camCtrl = viewer.cameraControl;   // <— instanța existentă
+    camCtrl.navMode       = "orbit";        // rotire/dolly/pan clasic
+    camCtrl.followPointer = true;           // zoom spre cursor
+    
+
+    
 
     new AmbientLight(viewer.scene, { color: [1, 1, 1], intensity: 0.6 });
     new DirLight(viewer.scene, { dir: [-0.5, -0.8, -0.3], color: [1, 1, 1], intensity: 1 });
@@ -98,7 +112,7 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
       values    : { glyph: "●", title: "" }
     });
 
-    viewerRef.current = { viewer, xktLoader, annotations };
+    viewerRef.current = { viewer, xktLoader, annotations, camCtrl };
     return () => viewer.destroy();
   }, []);
 
@@ -115,42 +129,64 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
 
   /* ── helper: adaugă / update annotation ─────── */
   const addOrUpdateAnnotation = (entityId: string, title: string) => {
-    const ctx = viewerRef.current;
-    if (!ctx) return;
-  
+    const ctx = viewerRef.current; if (!ctx) return;
+    const plugin = ctx.annotations;               // <-- variabilă definită
     const ent = ctx.viewer.scene.objects[entityId];
     if (!ent) return;
   
-    const plugin = ctx.annotations;
-  
     if (plugin.annotations?.[entityId]) {
-      /* există deja → doar schimbăm titlul și ne asigurăm că e vizibilă */
-      const anno = plugin.annotations[entityId];
-      anno.setValues({ title });
-      anno.setMarkerShown(true);
-      anno.setLabelShown(true);
-  
+      plugin.annotations[entityId].setValues({ title });
+      plugin.annotations[entityId].setMarkerShown(true);
+      plugin.annotations[entityId].setLabelShown(true);
     } else {
-      /* creeăm adnotarea ancorată la entitate */
       plugin.createAnnotation({
         id: entityId,
-        entity: ent,           // ← ancorare directă pe entitate
+        entity: ent,
+        worldPos: getEntityCenter(ent),
         markerShown: true,
         labelShown : true,
         values: { glyph: "●", title }
       });
     }
   
-    /* persistăm titlul în props.entityColors */
+    /* persistă în entityColors (neschimbat) */
     const list = props.entityColors || [];
     const idx  = list.findIndex(e => e.id === entityId);
-  
     const updated = idx >= 0
-      ? list.map((e,i)=> i===idx ? { ...e, annotation:{ title } } : e)
-      : [...list, { id: entityId, color:"#ff0000", annotation:{ title } }];
+        ? list.map((e,i)=> i===idx ? { ...e, annotation:{ title } } : e)
+        : [...list, { id: entityId, color:"#ff0000", annotation:{ title } }];
   
     emit({ entityColors: updated }, true);
   };
+  
+  /** Reconstruiește toate adnotările din props.entityColors */
+const rebuildAnnotations = () => {
+  const ctx = viewerRef.current;
+  if (!ctx) return;
+
+  const plugin = ctx.annotations;
+
+  props.entityColors?.forEach(({ id, annotation }) => {
+    const title = annotation?.title;
+    if (!title) return;
+
+    /* dacă există deja în plugin nu mai facem nimic */
+    if (plugin.annotations?.[id]) return;
+
+    const ent = ctx.viewer.scene.objects[id];
+    if (!ent) return;
+
+    plugin.createAnnotation({
+      id,
+      entity: ent,
+      worldPos: getEntityCenter(ent),
+      markerShown: true,
+      labelShown : true,
+      values: { glyph: "●", title }
+    });
+  });
+};
+
   
 
   /* ── ÎNCARCĂ MODEL ─────────────────────────── */
@@ -163,23 +199,13 @@ const SmartViewer: React.FC<ComponentProps<SmartViewerProps>> = ({ props, emit }
       ctx.viewer.cameraFlight.flyTo({ aabb: model.aabb });
       applyColors();
       /* recreăm etichetele */
-      props.entityColors?.forEach(({ id, annotation }) => {
-        const t = annotation?.title; if (!t) return;
-        const ent = ctx.viewer.scene.objects[id]; if (!ent) return;
-      
-        const center = getEntityCenter(ent);
-        ctx.annotations.createAnnotation({
-          id,
-          worldPos: center,
-          markerShown: true,
-          labelShown : true,
-          values: { glyph:"●", title:t }
-        });
-      });
+      rebuildAnnotations(); 
+           
     });
   }, [source]);
 
   React.useEffect(applyColors, [entityColors]);   // live color update
+  React.useEffect(rebuildAnnotations, [entityColors]); // live annotation update
 
   return (
     <div {...emit()} ref={containerRef}
