@@ -3,36 +3,59 @@
     "additionalProperties": false,
     "required": ["source"],
     "properties": {
-        "source": {
-            "type": "string",
-            "title": "Model source",
-            "description": "Calea relativă sau URL către fișierul .xkt",
-            "default": ""
-        },
-        "backgroundColor": {
-            "type": "string",
-            "format": "color",
-            "title": "Background color",
-            "default": "#f0f0f0"
-        },
-        "entityColors": {
-            "type": "array",
-            "title": "Entity Colors",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "title": "Entity ID"
-                    },
-                    "color": {
-                        "type": "string",
-                        "format": "color",
-                        "title": "Color"
-                    }
-                }
+      "source": {
+        "type": "string",
+        "title": "Model source",
+        "description": "Calea relativă sau URL către fișierul .xkt",
+        "default": ""
+      },
+      "backgroundColor": {
+        "type": "string",
+        "format": "color",
+        "title": "Background color",
+        "default": "#f0f0f0"
+      },
+      "entityColors": {
+        "type": "array",
+        "title": "Entity Colors",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "Entity ID"
             },
-            "default": []
-        }
+            "color": {
+              "type": "string",
+              "format": "color",
+              "title": "Color"
+            }
+          },
+          "required": ["id"]
+        },
+        "default": []
+      },
+  
+
+      "annotations": {
+        "type": "array",
+        "title": "Annotations",
+        "items": {
+          "type": "object",
+          "properties": {
+            "entityId": {
+              "type": "string",
+              "title": "Entity ID"
+            },
+            "title": {
+              "type": "string",
+              "title": "Label text"
+            }
+          },
+          "required": ["entityId", "title"]
+        },
+        "default": []
+      }
     }
-}
+  }
+  
